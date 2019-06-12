@@ -33,13 +33,13 @@ namespace CSbase
     public partial class Form1 : Form
     {
         public const string APP_TITLE = "C# BaseCode for DxLib [x64][Unicode] Ver. 0.2019.06.12.01";
-        bool BOOL_WAIT_VSYNC = false;
+
+        public bool BOOL_WAIT_VSYNC = false;
+        public int INTERVAL_TIME = 16666; // 60fps
+        public bool bOK = false;
 
         const int SIZE_WIDTH = 1280, SIZE_HEIGHT = 720; // 初期表示はHalf HD
         const int SIZE_X_BACKBUFFER = 1920, SIZE_Y_BACKBUFFER = 1080; // バックバッファはFull HD
-        const int INTERVAL_TIME = 16666; // 60fps
-        bool bOK = false;
-        long lNowTime, lNextTime;
         int nPosOld_X, nPosOld_Y;
         int nGRAPH_OFFSCREEN_1920x1080, nGRAPH_OFFSCREEN_1280x720;
         bool bVFullScreen = false; // 仮想フルスクリーンかどうか
@@ -135,7 +135,7 @@ namespace CSbase
                     FormBorderStyle = FormBorderStyle.FixedSingle;
                     ClientSize = new Size(SIZE_WIDTH, SIZE_HEIGHT);
                     bVFullScreen = false;
-                    ticker.Add("Window Mode", DXLIB_COLOR_BLACK);
+                    ticker.Add("Window Mode", DXLIB_COLOR_YELLOW);
                 }
             }
         }
@@ -143,60 +143,6 @@ namespace CSbase
         private void Form1_Shown(object sender, EventArgs e) // ゲームループ用に使用
         {
             if (bOK == false) Close();
-
-            lNowTime = DX.GetNowHiPerformanceCount();
-            lNextTime = lNowTime + INTERVAL_TIME;
-            long lPrevTime = lNowTime;
-
-            if (BOOL_WAIT_VSYNC == true)
-            {
-                while (bOK == true)
-                {
-                    lNowTime = DX.GetNowHiPerformanceCount();
-                    if (MainLoop((int)(lNowTime - lPrevTime)) == false)
-                    {
-                        bOK = false;
-                        Close();
-                    }
-                    lPrevTime = lNowTime;
-
-                    Application.DoEvents();
-                    if (DX.ProcessMessage() != 0)
-                    {
-                        bOK = false;
-                        Close();
-                    }
-                }
-            }
-            else
-            {
-                while (bOK == true)
-                {
-                    if (lNowTime >= lNextTime)
-                    {
-                        if (MainLoop((int)(lNowTime - lPrevTime)) == false)
-                        {
-                            bOK = false;
-                            Close();
-                        }
-                        lPrevTime = lNowTime;
-                        lNowTime = DX.GetNowHiPerformanceCount();
-                        lNextTime = lNextTime + INTERVAL_TIME;
-                        if (lNowTime > lNextTime) lNextTime = lNowTime + INTERVAL_TIME;
-                    }
-
-                    Application.DoEvents();
-                    if (DX.ProcessMessage() != 0)
-                    {
-                        bOK = false;
-                        Close();
-                    }
-                    // Sleep(1) は実際には(1+α)msec停止するので、ある程度余裕のある時だけ使用するとよい
-                    if (lNextTime - lNowTime > 2500) // ここでは2.5msecとした
-                        System.Threading.Thread.Sleep(1);
-                    lNowTime = DX.GetNowHiPerformanceCount();
-                }
-            }
         }
 
         private void Form1_FormClosing(object sender, FormClosingEventArgs e) // 終了前
@@ -219,7 +165,7 @@ namespace CSbase
         // ちらつき対策 (特に起動時。あえて何もしないことでちらつきを防ぐ)
         protected override void OnPaintBackground(PaintEventArgs pevent) { }
 
-        private bool MainLoop(int nDeltaTime) // 振り分け・画面更新
+        public bool MainLoop(int nDeltaTime) // 振り分け・画面更新
         {
             if (bOK == false) return true;
             if (bVFullScreen == true)
